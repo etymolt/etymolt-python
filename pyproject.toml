@@ -1,0 +1,46 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "etymolt"
+version = "0.1.0"
+description = "Official Python SDK for Etymolt — the fact-check layer for LLM-generated names."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+authors = [
+  { name = "Etymolt", email = "hello@etymolt.com" },
+]
+keywords = ["etymolt", "evp", "verdict", "trademark", "brand-clearance", "naming", "uspto", "fact-check", "ai", "llm"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: Apache Software License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+  "httpx>=0.24.0",
+]
+
+[project.urls]
+Homepage = "https://etymolt.com"
+Documentation = "https://etymolt.com/docs"
+Repository = "https://github.com/etymolt/etymolt-python"
+Issues = "https://github.com/etymolt/etymolt-python/issues"
+Changelog = "https://github.com/etymolt/etymolt-python/blob/main/CHANGELOG.md"
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=7.0",
+  "pytest-httpx>=0.30",
+  "mypy>=1.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/etymolt"]
