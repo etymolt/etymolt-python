@@ -21,7 +21,7 @@ See https://github.com/etymolt/evp-spec for the protocol.
 from .client import Etymolt, EtymoltError, AsyncEtymolt
 from .types import Verdict, VerdictAxes, AxisStatus
 
-__version__ = "0.1.1"
+__version__ = "0.2.0"
 
 __all__ = [
     "Etymolt",
