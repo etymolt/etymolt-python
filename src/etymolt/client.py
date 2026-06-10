@@ -43,7 +43,7 @@ class Etymolt:
         client: Optional[httpx.Client] = None,
         timeout: float = 30.0,
     ):
-        self._base_url = (base_url or self.DEFAULT_BASE_URL).rstrip("/")
+        self._base_url = (base_url or os.environ.get("ETYMOLT_BASE_URL") or self.DEFAULT_BASE_URL).rstrip("/")
         self._api_key = api_key or os.environ.get("ETYMOLT_API_KEY")
         self._client = client or httpx.Client(timeout=timeout)
         self._own_client = client is None
@@ -87,31 +87,61 @@ class Etymolt:
             try:
                 payload = response.json()
             except Exception:
-                pass
+                try:
+                    payload = response.text
+                except Exception:
+                    pass
             raise EtymoltError(
                 f"Etymolt API returned {response.status_code}: {response.reason_phrase}",
                 status=response.status_code,
                 response=payload,
             )
 
-        return response.json()  # type: ignore[no-any-return]
+        try:
+            return response.json()  # type: ignore[no-any-return]
+        except Exception as exc:
+            raise EtymoltError(
+                f"Etymolt returned malformed JSON: {exc}",
+                status=response.status_code,
+                response=response.text[:500],
+            ) from exc
 
     @staticmethod
     def is_stale(verdict: Verdict, now: Optional[datetime] = None) -> bool:
-        """Check whether a verdict is past its valid_until boundary."""
+        """Check whether a verdict is past its valid_until boundary.
+
+        Falls back to a default 24h policy if valid_until is missing.
+        Raises EtymoltError if neither valid_until nor issued_at is present
+        or the timestamps are malformed.
+        """
         current = now or datetime.now(timezone.utc)
-        if "valid_until" in verdict and verdict["valid_until"]:
-            valid_until = datetime.fromisoformat(verdict["valid_until"].replace("Z", "+00:00"))
+        valid_until_str = verdict.get("valid_until") if isinstance(verdict, dict) else None
+        if valid_until_str:
+            try:
+                valid_until = datetime.fromisoformat(valid_until_str.replace("Z", "+00:00"))
+            except (ValueError, TypeError) as exc:
+                raise EtymoltError(f"verdict has malformed valid_until: {exc}") from exc
             return current > valid_until
-        # Default policy: stale after 24h if no explicit valid_until.
-        issued = datetime.fromisoformat(verdict["issued_at"].replace("Z", "+00:00"))
+        issued_at_str = verdict.get("issued_at") if isinstance(verdict, dict) else None
+        if not issued_at_str:
+            raise EtymoltError("verdict missing issued_at and valid_until")
+        try:
+            issued = datetime.fromisoformat(issued_at_str.replace("Z", "+00:00"))
+        except (ValueError, TypeError) as exc:
+            raise EtymoltError(f"verdict has malformed issued_at: {exc}") from exc
         return current - issued > timedelta(hours=24)
 
     @staticmethod
     def age(verdict: Verdict, now: Optional[datetime] = None) -> timedelta:
-        """Get the age of a verdict."""
+        """Get the age of a verdict. Raises EtymoltError on missing/malformed issued_at."""
         current = now or datetime.now(timezone.utc)
-        issued = datetime.fromisoformat(verdict["issued_at"].replace("Z", "+00:00"))
+        issued_at_str = verdict.get("issued_at") if isinstance(verdict, dict) else None
+        if not issued_at_str:
+            raise EtymoltError("verdict missing issued_at")
+        try:
+            issued = datetime.fromisoformat(issued_at_str.replace("Z", "+00:00"))
+        except (ValueError, TypeError) as exc:
+            raise EtymoltError(f"verdict has malformed issued_at: {exc}") from exc
         return current - issued
 
 
@@ -133,7 +163,7 @@ class AsyncEtymolt:
         client: Optional[httpx.AsyncClient] = None,
         timeout: float = 30.0,
     ):
-        self._base_url = (base_url or self.DEFAULT_BASE_URL).rstrip("/")
+        self._base_url = (base_url or os.environ.get("ETYMOLT_BASE_URL") or self.DEFAULT_BASE_URL).rstrip("/")
         self._api_key = api_key or os.environ.get("ETYMOLT_API_KEY")
         self._client = client or httpx.AsyncClient(timeout=timeout)
         self._own_client = client is None
@@ -171,11 +201,21 @@ class AsyncEtymolt:
             try:
                 payload = response.json()
             except Exception:
-                pass
+                try:
+                    payload = response.text
+                except Exception:
+                    pass
             raise EtymoltError(
                 f"Etymolt API returned {response.status_code}: {response.reason_phrase}",
                 status=response.status_code,
                 response=payload,
             )
 
-        return response.json()  # type: ignore[no-any-return]
+        try:
+            return response.json()  # type: ignore[no-any-return]
+        except Exception as exc:
+            raise EtymoltError(
+                f"Etymolt returned malformed JSON: {exc}",
+                status=response.status_code,
+                response=response.text[:500],
+            ) from exc

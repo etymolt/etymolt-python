@@ -19,12 +19,16 @@ from etymolt import Etymolt
 etymolt = Etymolt()
 verdict = etymolt.verify("Stratagem")
 
-print(verdict["verdict"])     # "ITERATE"
-print(verdict["score"])       # 60
-print(verdict["disclaimer"])  # Render verbatim per EVP/1 §5.
+# verdict["verdict"]    → "PROCEED" | "ITERATE" | "DECIDE" | "ABANDON" | "INSUFFICIENT_SIGNAL"
+# verdict["score"]      → int | None (None when INSUFFICIENT_SIGNAL)
+# verdict["axes"]       → { trademark, domain, cultural, sound_symbolism, pronunciation }
+# verdict["disclaimer"] → Render verbatim per EVP/1 §5.
+
+print(verdict["verdict"], verdict["score"])
+print(verdict["disclaimer"])
 ```
 
-The free tier requires no API key.
+The free tier requires no API key. Outputs vary by name — names mutate over time as the underlying records of record change.
 
 ## Async
 
@@ -35,9 +39,32 @@ async with AsyncEtymolt() as etymolt:
     verdict = await etymolt.verify("Stratagem")
 ```
 
+## Temporal validity
+
+```python
+from etymolt import Etymolt
+
+if Etymolt.is_stale(verdict):
+    # past valid_until — re-verify before relying on it
+    verdict = etymolt.verify(verdict["name"])
+```
+
+## Develop offline
+
+```bash
+npx etymolt-mock                          # → http://localhost:4242
+ETYMOLT_BASE_URL=http://localhost:4242 python my_app.py
+```
+
+The SDK honors `ETYMOLT_BASE_URL` and the constructor's `base_url` argument. See [etymolt/etymolt-mock](https://github.com/etymolt/etymolt-mock).
+
 ## Documentation
 
 Full docs at [etymolt.com/docs](https://etymolt.com/docs). Protocol spec at [github.com/etymolt/evp-spec](https://github.com/etymolt/evp-spec).
+
+---
+
+*Naming, attested.*
 
 ## License
 
