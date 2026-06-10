@@ -19,8 +19,10 @@ from etymolt import Etymolt
 etymolt = Etymolt()
 verdict = etymolt.verify("Stratagem")
 
-# verdict["verdict"]    → "PROCEED" | "ITERATE" | "DECIDE" | "ABANDON" | "INSUFFICIENT_SIGNAL"
-# verdict["score"]      → int | None (None when INSUFFICIENT_SIGNAL)
+# verdict["verdict"]    → "PROCEED" | "PROCEED_STRATEGIC" | "ABANDON"
+# verdict["score"]      → int | None (None when status=="partial")
+# verdict["status"]     → "complete" | "partial"
+# verdict["reason"]     → str (e.g. "hard_blocker", "coexistence_required", "no_workaround")
 # verdict["axes"]       → { trademark, domain, cultural, sound_symbolism, pronunciation }
 # verdict["disclaimer"] → Render verbatim per EVP/1 §5.
 

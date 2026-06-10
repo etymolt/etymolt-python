@@ -20,7 +20,9 @@ class VerdictAxes(TypedDict):
 class Verdict(TypedDict, total=False):
     evp_version: str
     name: str
-    verdict: Literal["PROCEED", "ITERATE", "DECIDE", "ABANDON", "INSUFFICIENT_SIGNAL"]
+    verdict: Literal["PROCEED", "PROCEED_STRATEGIC", "ABANDON"]
+    status: Literal["complete", "partial"]
+    reason: Optional[str]
     score: Optional[int]
     axes: VerdictAxes
     verdict_id: str
