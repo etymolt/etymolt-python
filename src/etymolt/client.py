@@ -28,7 +28,7 @@ class Etymolt:
     >>> etymolt = Etymolt()
     >>> verdict = etymolt.verify("Stratagem")
     >>> verdict["verdict"]
-    'ITERATE'
+    'PROCEED_STRATEGIC'
 
     Free tier requires no API key. Pass ``api_key`` or set the
     ``ETYMOLT_API_KEY`` environment variable to authenticate.

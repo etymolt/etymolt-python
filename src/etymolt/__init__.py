@@ -12,7 +12,7 @@ Quick start:
     etymolt = Etymolt()
     verdict = etymolt.verify("Stratagem")
 
-    print(verdict["verdict"])  # "ITERATE"
+    print(verdict["verdict"])  # "PROCEED_STRATEGIC"
     print(verdict["score"])    # 60
 
 See https://github.com/etymolt/evp-spec for the protocol.
