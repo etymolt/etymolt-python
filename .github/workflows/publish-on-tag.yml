@@ -65,9 +65,45 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Wait for PyPI propagation
-        run: sleep 60
-      - name: Install + smoke test
+      - name: Determine version
+        id: version
         run: |
-          pip install --upgrade etymolt
+          # Strip leading "v" from tag (e.g. v0.2.1 -> 0.2.1)
+          RAW="${{ inputs.tag || github.ref_name }}"
+          VERSION="${RAW#v}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Resolved version: ${VERSION}"
+      - name: Wait for PyPI CDN propagation
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          # PyPI's JSON API propagates faster than the install mirrors.
+          # Poll it for up to 5 minutes before attempting pip install.
+          for i in $(seq 1 30); do
+            code=$(curl -sS -o /dev/null -w "%{http_code}" "https://pypi.org/pypi/etymolt/${VERSION}/json")
+            echo "attempt $i: pypi JSON check -> $code"
+            if [ "$code" = "200" ]; then
+              echo "Version ${VERSION} visible on PyPI JSON API."
+              break
+            fi
+            sleep 10
+          done
+      - name: Install + smoke test
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          # Retry pip install a few times in case the install mirror hasn't
+          # caught up with the JSON API yet.
+          set -e
+          for i in 1 2 3; do
+            echo "pip install attempt $i for etymolt==${VERSION}"
+            if pip install --upgrade "etymolt==${VERSION}"; then
+              break
+            fi
+            if [ "$i" = "3" ]; then
+              echo "pip install failed after 3 attempts"
+              exit 1
+            fi
+            sleep 10
+          done
           python -c "from etymolt import EtymoltClient; print('ok')"
